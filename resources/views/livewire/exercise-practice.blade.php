@@ -4,7 +4,10 @@
     <header class="border-b border-zinc-200 bg-white">
         <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
             <div>
-                <h1 class="text-lg font-semibold text-zinc-900 tracking-tight">English Practice</h1>
+                <h1 class="text-lg font-bold tracking-tight" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                    <span class="sm:hidden text-zinc-900">EP</span>
+                    <span class="hidden sm:inline"><span class="text-zinc-900">English</span> <span class="text-zinc-400">Practice</span></span>
+                </h1>
             </div>
             <div class="flex items-center gap-6 text-sm">
                 <div class="flex items-center gap-1.5 text-zinc-500">
