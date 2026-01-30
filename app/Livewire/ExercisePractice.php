@@ -63,7 +63,17 @@ class ExercisePractice extends Component
     {
         $this->reset(['userAnswer', 'isReviewing', 'showReference', 'aiFeedback', 'hintsUsed', 'availableHints']);
 
-        $query = Sentence::where('active', true);
+        $identifier = auth()->id() ?? Session::getId();
+        $column = auth()->check() ? 'user_id' : 'session_id';
+
+        // Frases ja praticadas hoje nao aparecem de novo
+        $practicedToday = UserAnswer::where($column, $identifier)
+            ->whereDate('created_at', today())
+            ->pluck('sentence_id')
+            ->toArray();
+
+        $query = Sentence::where('active', true)
+            ->when(!empty($practicedToday), fn ($q) => $q->whereNotIn('id', $practicedToday));
 
         if ($this->selectedLevel !== 'all') {
             $query->where('level', $this->selectedLevel);
@@ -73,22 +83,7 @@ class ExercisePractice extends Component
             $query->where('topic', $this->selectedTopic);
         }
 
-        // Spaced repetition: priorizar frases que o usuário errou
-        $identifier = auth()->id() ?? Session::getId();
-        $column = auth()->check() ? 'user_id' : 'session_id';
-
-        $wrongAnswers = UserAnswer::where($column, $identifier)
-            ->where('is_correct', false)
-            ->pluck('sentence_id')
-            ->toArray();
-
-        if (!empty($wrongAnswers) && rand(1, 100) <= 40) {
-            $this->currentSentence = $query->whereIn('id', $wrongAnswers)->inRandomOrder()->first();
-        }
-
-        if (!$this->currentSentence) {
-            $this->currentSentence = $query->inRandomOrder()->first();
-        }
+        $this->currentSentence = $query->inRandomOrder()->first();
 
         if ($this->currentSentence) {
             $this->checkIfFavorite();
