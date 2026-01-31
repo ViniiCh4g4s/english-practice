@@ -5,7 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class AiCorrectionService
+class AiCorrectionServiceGemini
 {
     protected string $apiKey;
 
@@ -13,52 +13,60 @@ class AiCorrectionService
 
     public function __construct()
     {
-        $this->apiKey = config('services.openai.key');
-        $this->model = 'gpt-4o-mini'; // Modelo mais barato da OpenAI
+        $this->apiKey = config('services.gemini.key');
+        $this->model = 'gemini-flash-latest';
     }
 
     public function correctTranslation(string $textPt, string $textEnReference, string $userTextEn): array
     {
         $prompt = $this->buildPrompt($textPt, $textEnReference, $userTextEn);
 
+        // URL com a API key como query parameter
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
+
         try {
             $response = Http::timeout(30)
                 ->withHeaders([
-                    'Authorization' => 'Bearer '.$this->apiKey,
                     'Content-Type' => 'application/json',
                 ])
-                ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => $this->model,
-                    'messages' => [
+                ->post($url, [
+                    'contents' => [
                         [
-                            'role' => 'system',
-                            'content' => 'Você é um professor de inglês especializado em correção de traduções. Sempre responda em JSON válido.',
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => $prompt,
+                            'parts' => [
+                                ['text' => $prompt],
+                            ],
                         ],
                     ],
-                    'response_format' => ['type' => 'json_object'],
-                    'temperature' => 0.3,
+                    'generationConfig' => [
+                        'temperature' => 0.3,
+                        'topK' => 40,
+                        'topP' => 0.95,
+                        'maxOutputTokens' => 2048,
+                    ],
                 ]);
 
             if ($response->failed()) {
-                Log::error('OpenAI API Error', [
+                Log::error('Gemini API Error', [
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
-                throw new \Exception('Erro OpenAI API: '.$response->body());
+
+                throw new \Exception('Erro Gemini API: '.$response->body());
             }
 
-            $content = $response->json('choices.0.message.content');
+            $content = $response->json('candidates.0.content.parts.0.text');
 
             if (! $content) {
-                Log::error('Empty response from OpenAI', [
+                Log::error('Empty response from Gemini', [
                     'full_response' => $response->json(),
                 ]);
                 throw new \Exception('Resposta vazia da API');
             }
+
+            // Limpar possíveis markdown code blocks
+            $content = preg_replace('/```json\n?/', '', $content);
+            $content = preg_replace('/```\n?/', '', $content);
+            $content = trim($content);
 
             $result = json_decode($content, true);
 
