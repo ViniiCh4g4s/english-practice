@@ -8,7 +8,6 @@ use App\Models\UserFavorite;
 use App\Models\UserProgress;
 use App\Services\AiCorrectionService;
 use Livewire\Component;
-use Illuminate\Support\Facades\Session;
 
 class ExercisePractice extends Component
 {
@@ -43,11 +42,8 @@ class ExercisePractice extends Component
 
     public function loadProgress()
     {
-        $identifier = auth()->id() ?? Session::getId();
-        $column = auth()->check() ? 'user_id' : 'session_id';
-
         $this->progress = UserProgress::firstOrCreate(
-            [$column => $identifier],
+            ['user_id' => auth()->id()],
             [
                 'total_exercises' => 0,
                 'correct_exercises' => 0,
@@ -63,11 +59,8 @@ class ExercisePractice extends Component
     {
         $this->reset(['userAnswer', 'isReviewing', 'showReference', 'aiFeedback', 'hintsUsed', 'availableHints']);
 
-        $identifier = auth()->id() ?? Session::getId();
-        $column = auth()->check() ? 'user_id' : 'session_id';
-
         // Frases ja praticadas hoje nao aparecem de novo
-        $practicedToday = UserAnswer::where($column, $identifier)
+        $practicedToday = UserAnswer::where('user_id', auth()->id())
             ->whereDate('created_at', today())
             ->pluck('sentence_id')
             ->toArray();
@@ -139,11 +132,8 @@ class ExercisePractice extends Component
 
     protected function saveAnswer()
     {
-        $identifier = auth()->id() ?? Session::getId();
-        $column = auth()->check() ? 'user_id' : 'session_id';
-
         UserAnswer::create([
-            $column => $identifier,
+            'user_id' => auth()->id(),
             'sentence_id' => $this->currentSentence->id,
             'user_text_en' => $this->userAnswer,
             'ai_feedback' => $this->aiFeedback,
@@ -184,10 +174,7 @@ class ExercisePractice extends Component
 
     public function toggleFavorite()
     {
-        $identifier = auth()->id() ?? Session::getId();
-        $column = auth()->check() ? 'user_id' : 'session_id';
-
-        $favorite = UserFavorite::where($column, $identifier)
+        $favorite = UserFavorite::where('user_id', auth()->id())
             ->where('sentence_id', $this->currentSentence->id)
             ->first();
 
@@ -196,7 +183,7 @@ class ExercisePractice extends Component
             $this->isFavorite = false;
         } else {
             UserFavorite::create([
-                $column => $identifier,
+                'user_id' => auth()->id(),
                 'sentence_id' => $this->currentSentence->id,
             ]);
             $this->isFavorite = true;
@@ -205,10 +192,7 @@ class ExercisePractice extends Component
 
     protected function checkIfFavorite()
     {
-        $identifier = auth()->id() ?? Session::getId();
-        $column = auth()->check() ? 'user_id' : 'session_id';
-
-        $this->isFavorite = UserFavorite::where($column, $identifier)
+        $this->isFavorite = UserFavorite::where('user_id', auth()->id())
             ->where('sentence_id', $this->currentSentence->id)
             ->exists();
     }
