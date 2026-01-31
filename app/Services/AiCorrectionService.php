@@ -8,73 +8,66 @@ use Illuminate\Support\Facades\Log;
 class AiCorrectionService
 {
     protected string $apiKey;
+
     protected string $model;
 
     public function __construct()
     {
-        $this->apiKey = config('services.gemini.key');
-        $this->model = 'gemini-flash-latest';
+        $this->apiKey = config('services.openai.key');
+        $this->model = 'gpt-4o-mini'; // Modelo mais barato da OpenAI
     }
 
     public function correctTranslation(string $textPt, string $textEnReference, string $userTextEn): array
     {
         $prompt = $this->buildPrompt($textPt, $textEnReference, $userTextEn);
 
-        // URL com a API key como query parameter
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
-
         try {
             $response = Http::timeout(30)
                 ->withHeaders([
+                    'Authorization' => 'Bearer '.$this->apiKey,
                     'Content-Type' => 'application/json',
                 ])
-                ->post($url, [
-                    'contents' => [
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => $this->model,
+                    'messages' => [
                         [
-                            'parts' => [
-                                ['text' => $prompt]
-                            ]
-                        ]
+                            'role' => 'system',
+                            'content' => 'Você é um professor de inglês especializado em correção de traduções. Sempre responda em JSON válido.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => $prompt,
+                        ],
                     ],
-                    'generationConfig' => [
-                        'temperature' => 0.3,
-                        'topK' => 40,
-                        'topP' => 0.95,
-                        'maxOutputTokens' => 2048,
-                    ],
+                    'response_format' => ['type' => 'json_object'],
+                    'temperature' => 0.3,
                 ]);
 
             if ($response->failed()) {
-                Log::error('Gemini API Error', [
+                Log::error('OpenAI API Error', [
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
-
-                throw new \Exception('Erro Gemini API: ' . $response->body());
+                throw new \Exception('Erro OpenAI API: '.$response->body());
             }
 
-            $content = $response->json('candidates.0.content.parts.0.text');
+            $content = $response->json('choices.0.message.content');
 
-            if (!$content) {
-                Log::error('Empty response from Gemini', [
-                    'full_response' => $response->json()
+            if (! $content) {
+                Log::error('Empty response from OpenAI', [
+                    'full_response' => $response->json(),
                 ]);
                 throw new \Exception('Resposta vazia da API');
             }
-
-            // Limpar possíveis markdown code blocks
-            $content = preg_replace('/```json\n?/', '', $content);
-            $content = preg_replace('/```\n?/', '', $content);
-            $content = trim($content);
 
             $result = json_decode($content, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
                 Log::error('JSON Decode Error', [
                     'error' => json_last_error_msg(),
-                    'content' => $content
+                    'content' => $content,
                 ]);
-                throw new \Exception('Erro ao processar resposta da IA: ' . json_last_error_msg());
+                throw new \Exception('Erro ao processar resposta da IA: '.json_last_error_msg());
             }
 
             return $result;
@@ -90,46 +83,53 @@ class AiCorrectionService
     protected function buildPrompt(string $textPt, string $textEnReference, string $userTextEn): string
     {
         return <<<PROMPT
-Você é um professor de inglês especializado em correção de traduções do português para o inglês.
+            Você é um professor de inglês especializado em correção de traduções do português para o inglês.
 
-Analise a tradução do aluno e retorne APENAS um JSON válido (sem markdown, sem explicações extras).
+            **IMPORTANTE**: Avalie se a tradução está CORRETA, não se está idêntica à referência. Contrações (She's, They're, I'm) são equivalentes às formas completas (She is, They are, I am) e devem ser consideradas igualmente corretas.
 
-**Frase original (PT):** {$textPt}
-**Tradução de referência (EN):** {$textEnReference}
-**Tradução do aluno (EN):** {$userTextEn}
+            **Frase original (PT):** {$textPt}
+            **Tradução de referência (EN):** {$textEnReference}
+            **Tradução do aluno (EN):** {$userTextEn}
 
-Retorne um JSON com esta estrutura EXATA:
-{
-  "is_correct": false,
-  "score": 60,
-  "overall_comment": "comentário geral em português",
-  "mistakes": [
-    {
-      "type": "grammar",
-      "original": "trecho errado",
-      "suggestion": "correção",
-      "explanation_pt": "explicação simples em português do erro"
-    }
-  ],
-  "corrected_sentence": "frase corrigida mantendo a intenção do aluno",
-  "natural_alternatives": [
-    "forma mais natural 1",
-    "forma mais natural 2"
-  ],
-  "positive_points": [
-    "o que o aluno acertou"
-  ]
-}
+            CRITÉRIOS DE CORREÇÃO:
+            1. Se a tradução está gramaticalmente correta E transmite o mesmo significado → is_correct = true, score = 100
+            2. Contrações são SEMPRE corretas (She's = She is, They're = They are, etc)
+            3. Pequenas variações estilísticas que não mudam o significado são corretas
+            4. Só considere erro se houver: gramática errada, vocabulário errado, significado diferente, ou falta de naturalidade óbvia
+            5. A referência é apenas um EXEMPLO, não a única resposta correta
 
-Critérios de avaliação:
-- is_correct = true apenas se está perfeito ou com detalhes muito pequenos aceitáveis
-- score considera: gramática (40%), vocabulário (30%), naturalidade (30%)
-- Se não houver erros, "mistakes" deve ser um array vazio []
-- Sempre destaque pelo menos 1-2 pontos positivos em "positive_points"
-- Seja encorajador mas honesto
-- "natural_alternatives" deve ter 2-3 formas diferentes de expressar a mesma ideia
+            Retorne um JSON com esta estrutura EXATA:
+            {
+              "is_correct": true ou false,
+              "score": número de 0 a 100,
+              "overall_comment": "comentário geral em português",
+              "mistakes": [
+                {
+                  "type": "grammar, spelling, vocabulary, preposition, article, verb_tense, word_order ou punctuation",
+                  "original": "trecho errado",
+                  "suggestion": "correção",
+                  "explanation_pt": "explicação simples em português do erro REAL"
+                }
+              ],
+              "corrected_sentence": "frase corrigida (ou a própria frase do aluno se estiver correta)",
+              "natural_alternatives": [
+                "forma alternativa 1",
+                "forma alternativa 2"
+              ],
+              "positive_points": [
+                "o que o aluno acertou"
+              ]
+            }
 
-IMPORTANTE: Retorne APENAS o JSON, sem texto antes ou depois, sem ```json ou ```.
-PROMPT;
+            REGRAS IMPORTANTES:
+            - Se não há ERRO REAL de gramática/vocabulário/significado → is_correct = true, score = 100, mistakes = []
+            - "She's" e "She is" são IGUALMENTE corretos
+            - "They're" e "They are" são IGUALMENTE corretos
+            - Não penalize por escolhas estilísticas válidas
+            - Só aponte erros se houver algo genuinamente errado
+            - Se a frase do aluno está perfeita, corrected_sentence = frase do aluno (não mude para a referência)
+
+            IMPORTANTE: Retorne APENAS o JSON, sem texto antes ou depois, sem ```json ou ```.
+        PROMPT;
     }
 }

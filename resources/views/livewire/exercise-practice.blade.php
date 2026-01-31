@@ -1,7 +1,7 @@
-<div class="min-h-screen bg-zinc-50">
+<div class="min-h-screen">
 
     {{-- Top Bar --}}
-    <header class="border-b border-zinc-200 bg-white">
+    <header class="glass-header border-b border-white/10">
         <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
             <div>
                 <h1 class="text-lg font-bold tracking-tight" style="font-family: 'Plus Jakarta Sans', sans-serif;">
@@ -10,17 +10,27 @@
                 </h1>
             </div>
             <div class="flex items-center gap-6 text-sm">
-                <div class="flex items-center gap-1.5 text-zinc-500">
+                <div class="hidden sm:flex items-center gap-1.5 text-zinc-500">
                     <span class="font-medium text-zinc-900">{{ $progress->total_xp }}</span> XP
                 </div>
-                <div class="h-4 w-px bg-zinc-200"></div>
+                <div class="hidden sm:block h-4 w-px bg-zinc-300/40"></div>
                 <div class="flex items-center gap-1.5 text-zinc-500">
                     <span class="font-medium text-zinc-900">{{ $progress->current_streak }}</span> streak
                 </div>
-                <div class="h-4 w-px bg-zinc-200"></div>
+                <div class="h-4 w-px bg-zinc-300/40"></div>
                 <div class="flex items-center gap-1.5 text-zinc-500">
                     <span class="font-medium text-zinc-900">{{ $progress->accuracy }}%</span> acc
                 </div>
+                <div class="h-4 w-px bg-zinc-300/40"></div>
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" class="text-zinc-400 hover:text-zinc-600 transition-colors" title="Sair">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4.5 h-4.5">
+                            <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd"/>
+                            <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                </form>
             </div>
         </div>
     </header>
@@ -29,19 +39,19 @@
 
         {{-- Stats Row --}}
         <div class="grid grid-cols-4 gap-4">
-            <div class="bg-white border border-zinc-200 rounded-lg px-4 py-3">
+            <div class="glass-sm rounded-xl px-4 py-3">
                 <p class="text-xs text-zinc-500 mb-0.5">Level</p>
                 <p class="text-lg font-semibold text-zinc-900">{{ $progress->level }}</p>
             </div>
-            <div class="bg-white border border-zinc-200 rounded-lg px-4 py-3">
+            <div class="glass-sm rounded-xl px-4 py-3">
                 <p class="text-xs text-zinc-500 mb-0.5">Exercises</p>
                 <p class="text-lg font-semibold text-zinc-900">{{ $progress->total_exercises }}</p>
             </div>
-            <div class="bg-white border border-zinc-200 rounded-lg px-4 py-3">
+            <div class="glass-sm rounded-xl px-4 py-3">
                 <p class="text-xs text-zinc-500 mb-0.5">Correct</p>
                 <p class="text-lg font-semibold text-zinc-900">{{ $progress->correct_exercises }}</p>
             </div>
-            <div class="bg-white border border-zinc-200 rounded-lg px-4 py-3">
+            <div class="glass-sm rounded-xl px-4 py-3">
                 <p class="text-xs text-zinc-500 mb-0.5">Best Streak</p>
                 <p class="text-lg font-semibold text-zinc-900">{{ $progress->best_streak }}</p>
             </div>
@@ -49,7 +59,7 @@
 
         {{-- Filters --}}
         <div class="flex items-center gap-3">
-            <select wire:model="selectedLevel" wire:change="loadNewExercise" class="text-sm bg-white border border-zinc-200 rounded-lg px-3 py-2 text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-1">
+            <select wire:model="selectedLevel" wire:change="loadNewExercise" class="text-sm glass-select rounded-xl px-3 py-2 text-zinc-700">
                 <option value="all">All levels</option>
                 <option value="A1">A1 - Beginner</option>
                 <option value="A2">A2 - Elementary</option>
@@ -57,7 +67,7 @@
                 <option value="B2">B2 - Upper Inter.</option>
                 <option value="C1">C1 - Advanced</option>
             </select>
-            <select wire:model="selectedTopic" wire:change="loadNewExercise" class="text-sm bg-white border border-zinc-200 rounded-lg px-3 py-2 text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-1">
+            <select wire:model="selectedTopic" wire:change="loadNewExercise" class="text-sm glass-select rounded-xl px-3 py-2 text-zinc-700">
                 <option value="all">All topics</option>
                 <option value="food">Food</option>
                 <option value="family">Family</option>
@@ -71,11 +81,11 @@
 
         @if($currentSentence)
         {{-- Exercise Card --}}
-        <div class="bg-white border border-zinc-200 rounded-lg shadow-sm">
+        <div class="glass rounded-2xl overflow-hidden">
 
             {{-- Card Header --}}
-            <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-600">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium glass-sm text-zinc-600">
                     {{ $currentSentence->level }} &middot; {{ $currentSentence->topic }}
                 </span>
                 <button wire:click="toggleFavorite" class="text-sm {{ $isFavorite ? 'text-rose-500' : 'text-zinc-300 hover:text-zinc-400' }} transition-colors">
@@ -93,7 +103,7 @@
 
             {{-- Hints --}}
             @if($hintsUsed > 0)
-            <div class="mx-6 mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div class="mx-6 mb-4 px-4 py-3 glass-warning rounded-xl">
                 <p class="text-xs font-medium text-amber-700 mb-1">Hints</p>
                 @foreach(array_slice($availableHints, 0, $hintsUsed) as $hint)
                 <p class="text-sm text-amber-600">{{ $hint }}</p>
@@ -108,8 +118,9 @@
                     <textarea
                         wire:model="userAnswer"
                         rows="2"
-                        class="w-full rounded-lg border border-zinc-200 px-4 py-3 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-1 resize-none"
+                        class="w-full rounded-xl glass-input px-4 py-3 text-zinc-900 placeholder-zinc-400 resize-none"
                         placeholder="Type your translation here..."
+                        x-on:keydown.enter.prevent="$wire.submitAnswer()"
                     ></textarea>
                     @error('userAnswer')
                     <p class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
@@ -121,7 +132,7 @@
                     <button
                         type="button"
                         wire:click="showHint"
-                        class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+                        class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-zinc-700 glass-button-secondary rounded-xl"
                     >
                         Hint
                         <span class="text-zinc-400">({{ $hintsUsed }}/{{ count($availableHints) }})</span>
@@ -130,12 +141,12 @@
 
                     <button
                         type="submit"
-                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium glass-button rounded-xl"
                         wire:loading.attr="disabled"
                         wire:target="submitAnswer"
                     >
                         <span wire:loading.remove wire:target="submitAnswer">Check Translation</span>
-                        <span wire:loading wire:target="submitAnswer" class="inline-flex items-center gap-2">
+                        <span wire:loading wire:target="submitAnswer" class="inline-flex items-center gap-2 whitespace-nowrap">
                             <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -149,10 +160,10 @@
 
             {{-- AI Feedback --}}
             @if($isReviewing && $aiFeedback)
-            <div class="border-t border-zinc-200">
+            <div class="border-t border-white/10">
 
                 {{-- Score Banner --}}
-                <div class="px-6 py-5 {{ $aiFeedback['is_correct'] ? 'bg-emerald-50' : 'bg-amber-50' }}">
+                <div class="px-6 py-5 {{ $aiFeedback['is_correct'] ? 'glass-success' : 'glass-warning' }}">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-semibold {{ $aiFeedback['is_correct'] ? 'text-emerald-800' : 'text-amber-800' }}">
@@ -191,9 +202,9 @@
                         <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Issues found</p>
                         <div class="space-y-3">
                             @foreach($aiFeedback['mistakes'] as $mistake)
-                            <div class="border border-zinc-200 rounded-lg p-4">
+                            <div class="glass-sm rounded-xl p-4">
                                 <div class="flex items-center gap-2 mb-2">
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium text-rose-700" style="background-color: color-mix(in srgb, #f43f5e 10%, transparent);">
                                         {{ $mistake['type'] }}
                                     </span>
                                 </div>
@@ -220,7 +231,7 @@
                         <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Alternative ways to say it</p>
                         <ul class="space-y-1">
                             @foreach($aiFeedback['natural_alternatives'] as $alternative)
-                            <li class="text-sm text-zinc-700 pl-3 border-l-2 border-zinc-200 py-0.5">{{ $alternative }}</li>
+                            <li class="text-sm text-zinc-700 pl-3 border-l-2 border-zinc-300/50 py-0.5">{{ $alternative }}</li>
                             @endforeach
                         </ul>
                     </div>
@@ -232,7 +243,7 @@
                         <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">What you got right</p>
                         <ul class="space-y-1">
                             @foreach($aiFeedback['positive_points'] as $point)
-                            <li class="text-sm text-emerald-700 pl-3 border-l-2 border-emerald-300 py-0.5">{{ $point }}</li>
+                            <li class="text-sm text-emerald-700 pl-3 border-l-2 border-emerald-400/50 py-0.5">{{ $point }}</li>
                             @endforeach
                         </ul>
                     </div>
@@ -248,11 +259,11 @@
                 </div>
 
                 {{-- Action Buttons --}}
-                <div class="px-6 py-4 border-t border-zinc-100 flex items-center gap-3">
+                <div class="px-6 py-4 border-t border-white/10 flex items-center gap-3">
                     @if(!$showReference)
                     <button
                         wire:click="$set('showReference', true)"
-                        class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+                        class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-zinc-700 glass-button-secondary rounded-xl"
                     >
                         Show reference
                     </button>
@@ -260,7 +271,7 @@
 
                     <button
                         wire:click="loadNewExercise"
-                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 transition-colors"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium glass-button rounded-xl"
                     >
                         Next sentence
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4">
@@ -274,7 +285,7 @@
             {{-- Error flash --}}
             @if(session()->has('error'))
             <div class="px-6 pb-4">
-                <div class="px-4 py-3 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700">
+                <div class="px-4 py-3 rounded-xl text-sm text-rose-700" style="background-color: color-mix(in srgb, #f43f5e 10%, transparent);">
                     {{ session('error') }}
                 </div>
             </div>
@@ -282,7 +293,7 @@
         </div>
         @else
         {{-- Empty State --}}
-        <div class="bg-white border border-zinc-200 rounded-lg shadow-sm px-6 py-12 text-center">
+        <div class="glass rounded-2xl px-6 py-12 text-center">
             <p class="text-zinc-500">No sentences found for the selected filters.</p>
             <button wire:click="$set('selectedLevel', 'all')" class="mt-3 text-sm font-medium text-zinc-900 underline underline-offset-4 hover:text-zinc-700">
                 Reset filters

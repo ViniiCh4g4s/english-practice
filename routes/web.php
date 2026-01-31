@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
-})->name('home');
+})->middleware(['auth'])->name('home');
 
 Route::get('/test-ai', function () {
     $service = new AiCorrectionService;
