@@ -85,7 +85,10 @@ class AiCorrectionService
         return <<<PROMPT
             Você é um professor de inglês especializado em correção de traduções do português para o inglês.
 
-            **IMPORTANTE**: Avalie se a tradução está CORRETA, não se está idêntica à referência. Contrações (She's, They're, I'm) são equivalentes às formas completas (She is, They are, I am) e devem ser consideradas igualmente corretas.
+            **IMPORTANTE**:
+            - Avalie se a tradução está CORRETA, não se está idêntica à referência
+            - Contrações (She's, They're, I'm) são equivalentes às formas completas (She is, They are, I am)
+            - A referência é apenas um EXEMPLO, não a única resposta correta
 
             **Frase original (PT):** {$textPt}
             **Tradução de referência (EN):** {$textEnReference}
@@ -95,8 +98,8 @@ class AiCorrectionService
             1. Se a tradução está gramaticalmente correta E transmite o mesmo significado → is_correct = true, score = 100
             2. Contrações são SEMPRE corretas (She's = She is, They're = They are, etc)
             3. Pequenas variações estilísticas que não mudam o significado são corretas
-            4. Só considere erro se houver: gramática errada, vocabulário errado, significado diferente, ou falta de naturalidade óbvia
-            5. A referência é apenas um EXEMPLO, não a única resposta correta
+            4. Só considere erro se houver: gramática errada, vocabulário errado, significado diferente
+            5. CAMPO "corrected_sentence": Se houver erros, retorne a frase CORRIGIDA. Se não houver erros, retorne a frase EXATA do aluno
 
             Retorne um JSON com esta estrutura EXATA:
             {
@@ -106,28 +109,52 @@ class AiCorrectionService
               "mistakes": [
                 {
                   "type": "grammar, spelling, vocabulary, preposition, article, verb_tense, word_order ou punctuation",
-                  "original": "trecho errado",
-                  "suggestion": "correção",
-                  "explanation_pt": "explicação simples em português do erro REAL"
+                  "original": "palavra ou trecho EXATO que está errado",
+                  "suggestion": "correção EXATA",
+                  "explanation_pt": "explicação do erro em português"
                 }
               ],
-              "corrected_sentence": "frase corrigida (ou a própria frase do aluno se estiver correta)",
+              "corrected_sentence": "SE HOUVER ERROS: frase totalmente corrigida. SE NÃO HOUVER ERROS: copie a frase exata do aluno",
               "natural_alternatives": [
-                "forma alternativa 1",
-                "forma alternativa 2"
+                "forma alternativa 1 (diferente da resposta do aluno)",
+                "forma alternativa 2 (diferente da resposta do aluno)"
               ],
               "positive_points": [
-                "o que o aluno acertou"
+                "o que o aluno acertou (seja específico)"
               ]
             }
 
-            REGRAS IMPORTANTES:
-            - Se não há ERRO REAL de gramática/vocabulário/significado → is_correct = true, score = 100, mistakes = []
-            - "She's" e "She is" são IGUALMENTE corretos
-            - "They're" e "They are" são IGUALMENTE corretos
-            - Não penalize por escolhas estilísticas válidas
-            - Só aponte erros se houver algo genuinamente errado
-            - Se a frase do aluno está perfeita, corrected_sentence = frase do aluno (não mude para a referência)
+            EXEMPLOS DE CORREÇÃO CORRETA:
+
+            Exemplo 1 - ERRO REAL:
+            Aluno: "I like summer than winter"
+            Referência: "I like summer more than winter"
+            Resposta correta:
+            {
+              "is_correct": false,
+              "score": 60,
+              "mistakes": [{"type": "grammar", "original": "I like summer than winter", "suggestion": "I like summer more than winter", "explanation_pt": "A frase correta deve incluir 'more' para comparar as duas estações corretamente."}],
+              "corrected_sentence": "I like summer more than winter.",
+              "positive_points": ["O aluno usou a estrutura básica da frase corretamente."]
+            }
+
+            Exemplo 2 - SEM ERRO (contração):
+            Aluno: "She's learning to drive"
+            Referência: "She is learning to drive"
+            Resposta correta:
+            {
+              "is_correct": true,
+              "score": 100,
+              "mistakes": [],
+              "corrected_sentence": "She's learning to drive.",
+              "positive_points": ["Frase perfeita! Gramática, vocabulário e estrutura estão corretos. O uso da contração 'She's' é natural e apropriado."]
+            }
+
+            REGRAS CRÍTICAS:
+            - ❌ NUNCA copie a frase errada do aluno no campo "corrected_sentence" se houver erros
+            - ✅ SEMPRE aplique TODAS as correções necessárias no campo "corrected_sentence"
+            - ✅ Se não houver erros, mantenha a frase EXATA do aluno (incluindo contrações)
+            - ✅ "natural_alternatives" devem ser DIFERENTES da resposta do aluno
 
             IMPORTANTE: Retorne APENAS o JSON, sem texto antes ou depois, sem ```json ou ```.
         PROMPT;
