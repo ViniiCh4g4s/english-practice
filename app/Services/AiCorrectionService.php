@@ -83,46 +83,53 @@ class AiCorrectionService
     protected function buildPrompt(string $textPt, string $textEnReference, string $userTextEn): string
     {
         return <<<PROMPT
-Você é um professor de inglês especializado em correção de traduções do português para o inglês.
+            Você é um professor de inglês especializado em correção de traduções do português para o inglês.
 
-Analise a tradução do aluno e retorne APENAS um JSON válido (sem markdown, sem explicações extras).
+            **IMPORTANTE**: Avalie se a tradução está CORRETA, não se está idêntica à referência. Contrações (She's, They're, I'm) são equivalentes às formas completas (She is, They are, I am) e devem ser consideradas igualmente corretas.
 
-**Frase original (PT):** {$textPt}
-**Tradução de referência (EN):** {$textEnReference}
-**Tradução do aluno (EN):** {$userTextEn}
+            **Frase original (PT):** {$textPt}
+            **Tradução de referência (EN):** {$textEnReference}
+            **Tradução do aluno (EN):** {$userTextEn}
 
-Retorne um JSON com esta estrutura EXATA:
-{
-  "is_correct": false,
-  "score": 60,
-  "overall_comment": "comentário geral em português",
-  "mistakes": [
-    {
-      "type": "grammar",
-      "original": "trecho errado",
-      "suggestion": "correção",
-      "explanation_pt": "explicação simples em português do erro"
-    }
-  ],
-  "corrected_sentence": "frase corrigida mantendo a intenção do aluno",
-  "natural_alternatives": [
-    "forma mais natural 1",
-    "forma mais natural 2"
-  ],
-  "positive_points": [
-    "o que o aluno acertou"
-  ]
-}
+            CRITÉRIOS DE CORREÇÃO:
+            1. Se a tradução está gramaticalmente correta E transmite o mesmo significado → is_correct = true, score = 100
+            2. Contrações são SEMPRE corretas (She's = She is, They're = They are, etc)
+            3. Pequenas variações estilísticas que não mudam o significado são corretas
+            4. Só considere erro se houver: gramática errada, vocabulário errado, significado diferente, ou falta de naturalidade óbvia
+            5. A referência é apenas um EXEMPLO, não a única resposta correta
 
-Critérios de avaliação:
-- is_correct = true apenas se está perfeito ou com detalhes muito pequenos aceitáveis
-- score considera: gramática (40%), vocabulário (30%), naturalidade (30%)
-- Se não houver erros, "mistakes" deve ser um array vazio []
-- Sempre destaque pelo menos 1-2 pontos positivos em "positive_points"
-- Seja encorajador mas honesto
-- "natural_alternatives" deve ter 2-3 formas diferentes de expressar a mesma ideia
+            Retorne um JSON com esta estrutura EXATA:
+            {
+              "is_correct": true ou false,
+              "score": número de 0 a 100,
+              "overall_comment": "comentário geral em português",
+              "mistakes": [
+                {
+                  "type": "grammar, spelling, vocabulary, preposition, article, verb_tense, word_order ou punctuation",
+                  "original": "trecho errado",
+                  "suggestion": "correção",
+                  "explanation_pt": "explicação simples em português do erro REAL"
+                }
+              ],
+              "corrected_sentence": "frase corrigida (ou a própria frase do aluno se estiver correta)",
+              "natural_alternatives": [
+                "forma alternativa 1",
+                "forma alternativa 2"
+              ],
+              "positive_points": [
+                "o que o aluno acertou"
+              ]
+            }
 
-IMPORTANTE: Retorne APENAS o JSON, sem texto antes ou depois, sem ```json ou ```.
-PROMPT;
+            REGRAS IMPORTANTES:
+            - Se não há ERRO REAL de gramática/vocabulário/significado → is_correct = true, score = 100, mistakes = []
+            - "She's" e "She is" são IGUALMENTE corretos
+            - "They're" e "They are" são IGUALMENTE corretos
+            - Não penalize por escolhas estilísticas válidas
+            - Só aponte erros se houver algo genuinamente errado
+            - Se a frase do aluno está perfeita, corrected_sentence = frase do aluno (não mude para a referência)
+
+            IMPORTANTE: Retorne APENAS o JSON, sem texto antes ou depois, sem ```json ou ```.
+        PROMPT;
     }
 }
