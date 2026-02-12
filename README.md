@@ -61,7 +61,7 @@ php artisan serve
 
 Acesse: http://localhost:8000
 
-## Estrutura
+## Estrutura Alterada
 
 ```
 app/
